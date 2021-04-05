@@ -4,7 +4,7 @@ const { join } = require('path')
 const cors=require('cors')
 const mongoose=require('mongoose')
 const nodemailer = require('nodemailer');
-
+const Order = require('./models/order');
 const bodyParser=require('body-parser')
 const connectDB=require('./keys')
 const User=require("./models/Work");
@@ -52,7 +52,7 @@ app.post('/Signupworker',async(req,res)=>{
          console.log("saved");
          
    
-         res.send({mes:true,prof:userModel.email});
+         res.send({mes:true,prof:userModel._id});
          
          };
   });
@@ -75,7 +75,7 @@ app.post('/Loginworker',async(req,res)=>{
         if(result[0].password===password)
         {   
           console.log("you are successfully logdin");
-          res.send({mes:true,prof:result[0].email});
+          res.send({mes:true,prof:result[0]._id});
         }
         else{
           console.log("your password is wrong");
@@ -119,7 +119,7 @@ app.post('/Signupcust',async(req,res)=>{
           custModel.save();
          console.log("saved");
          //res.json(userModel);
-         res.send({mes:true,prof:custModel.email});
+         res.send({mes:true,prof:custModel._id});
          
          
          };
@@ -140,7 +140,7 @@ app.post('/Logincust',async(req,res)=>{
         if(result[0].password===password)
         {   
           console.log("you are successfully logdin");
-          res.send({mes:true,prof:result[0].email});
+          res.send({mes:true,prof:result[0]._id});
         }
         else{
           console.log("your password is wrong");
@@ -158,17 +158,17 @@ app.post('/Logincust',async(req,res)=>{
 });
 
 app.post('/Profile',async(req,res)=>{
-  var email=req.body.profile.email;
+  var id=req.body.profile.id;
   var stat=req.body.profile.stat;
 if(stat==="custm")
 {
-  await Cust.find({email :email}).then(result =>
+  await Cust.find({_id :id}).then(result =>
     {  
       res.json({profile:result[0]});
   });
 }
 else{
-  await User.find({email :email}).then(result =>
+  await User.find({_id :id}).then(result =>
     {  
       res.json({profile:result[0]});
   });
@@ -180,30 +180,37 @@ else{
 app.post('/get_service',async(req,res)=>{
   console.log(req.body);
   var problem = req.body.mybook.problem
-  var email = req.body.mybook.email
+  var idc = req.body.mybook.id
   var location = req.body.mybook.location
   var image = req.body.mybook.image
   var serviceType=req.body.mybook.serviceType
   var latitude=req.body.mybook.latitude
   var longitude=req.body.mybook.longitude
+  var d = new Date();
+
  
-
-  let book={};
-        book.problem=problem;
-        book.email=email;
-        book.location=location;
-        book.image=image;
-        book.serviceType=serviceType;
-        book.latitude=latitude;
-        book.longitude=longitude;
-
-        let bookModel=new Book(book);
-         await bookModel.save();
-         console.log("saved");
-
-   User.find({serviceType:serviceType}).then(result =>
+         
+         
+  await User.find({serviceType:serviceType}).then(result =>
     {  console.log(result);
      var emailw=result[0].email;
+     var idw=result[0]._id;
+      
+     let book={};
+     book.problem=problem;
+     book.cust_id=idc;
+     book.worker_id=idw;
+     book.status=0;
+     book.location=location;
+     book.image=image;
+     book.serviceType=serviceType;
+     book.latitude=latitude;
+     book.longitude=longitude;
+     book.date=d;
+     let bookModel=new Book(book);
+       bookModel.save();
+      console.log("saved");
+
       var transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -216,7 +223,7 @@ app.post('/get_service',async(req,res)=>{
         from: 'royalking1012000@gmail.com',
         to: emailw,
         subject: 'Sending Email using Node.js',
-        text: 'you have a new booking from '+location+ ' & email of customer is: ' +email
+        text: 'you have a new booking from '+location+ 'please do this ' 
       };
       
       transporter.sendMail(mailOptions, function(error, info){
@@ -227,18 +234,73 @@ app.post('/get_service',async(req,res)=>{
         }
       });
       
-      
-      
-      
-      
-      
-      
-      console.log(result.length);
+     console.log(result.length);
       res.json({respond:"successfully booked",bookboy:result[0].name,bookmob:result[0].contact});
   });
   
 });
 
 
+app.post('/changeProfile',async(req,res)=>{
+  var id = req.body.changeProfile.id
+  var name = req.body.changeProfile.name
+  var email = req.body.changeProfile.email
+  var cityName = req.body.changeProfile.cityName
+  var contact = req.body.changeProfile.contact
+  var job = req.body.changeProfile.job
+  
+if(job==="worker")
+{  
+  await User.updateOne({_id:id}, {$set: {name:name , email: email, cityName: cityName, contact:contact}});
+  console.log("profile updated successfully");
+  res.json({mes:true});
+}
+else{
+  await Cust.updateOne({_id:id}, {$set: {name:name , email: email, cityName: cityName, contact:contact}});
+  console.log("profile updat successfully");
+  res.json({mes:true});
+}
 
+});
+app.post('/Mybooking',async(req,res)=>{
+  var id=req.body.booking.id;
+  var stat=req.body.booking.stat;
+if(stat==="custm")
+{
+  await Book.find({cust_id :id}).then(result =>
+    {  
+      res.json({bookingss:result});
+
+  });
+}
+else{
+  await Book.find({worker_id :id}).then(result =>
+    {  
+      res.json({bookingss:result});
+  });
+}
+
+})
+
+app.post('/Order',async(req,res)=>{
+  var id=req.body.booking.id;
+  var stat=req.body.booking.stat;
+  var x=0;
+  await Book.find({worker_id :id,status:x}).then(result =>
+    { 
+      res.json({bookingss:result});
+  });
+}
+)
+
+app.post('/accept',async(req,res)=>{
+  var id=req.body.Accept.id;
+  var stat=req.body.Accept.revew;
+  var x=0;
+   console.log(stat);
+      await Book.updateOne({_id:id}, {$set: {status:stat}});
+      res.json({rev:stat});
+ 
+}
+)
 app.listen(8080);

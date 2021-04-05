@@ -20,6 +20,18 @@ const book=new mongoose.Schema({
     },
     longitude :{
         type:String
+    },
+    date :{
+        type: String
+    },
+    cust_id:{
+        type: String
+    },
+    worker_id:{
+        type: String
+    },
+    status:{
+        type: Number
     }
 });
 
