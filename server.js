@@ -16,7 +16,7 @@ app.use(cors())
 app.use(bodyParser.urlencoded({
   extended: true
 }));
-
+var porrt=process.env.PORT||8080;
 app.use(cors())
 app.use(bodyParser.json());
 connectDB();
@@ -303,4 +303,4 @@ app.post('/accept',async(req,res)=>{
  
 }
 )
-app.listen(8080);
+app.listen(porrt);
